@@ -1,10 +1,19 @@
 import express from 'express';
 const router = express.Router();
-import pool from '../db.js';
+import pool from '../db/pool.js';
 
 // 🔹 GET: Барлық заявкалар
 router.get('/', async (req, res) => {
   try {
+    if (!pool) {
+      // Уақытша деректер (база деректер жоқ болса)
+      const mockBookings = [
+        { id: 1, name: 'Аян', phone: '+7 (777) 123-45-67', created_at: '2024-01-15T10:30:00Z' },
+        { id: 2, name: 'Марат', phone: '+7 (701) 987-65-43', created_at: '2024-01-14T15:45:00Z' }
+      ];
+      return res.json({ bookings: mockBookings });
+    }
+    
     const result = await pool.query('SELECT * FROM bookings ORDER BY created_at DESC');
     res.json({ bookings: result.rows });
   } catch (err) {
@@ -45,6 +54,18 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    if (!pool) {
+      // Уақытша деректер (база деректер жоқ болса)
+      const newBooking = {
+        id: Date.now(),
+        name: name.trim(),
+        phone: phone.trim(),
+        created_at: new Date().toISOString()
+      };
+      console.log('📥 Жаңа заявка (mock):', newBooking);
+      return res.status(201).json(newBooking);
+    }
+    
     const result = await pool.query(
       'INSERT INTO bookings (name, phone) VALUES ($1, $2) RETURNING *',
       [name.trim(), phone.trim()]
